@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+        <script type="application/javascript" src="scheduler.js"></script>
+        <script type="application/javascript">
+            var scheduler = new Scheduler()
+
+            scheduler.add(                "https://api.stackexchange.com/2.2/info?site=stackoverflow",
+                function (text){
+                    alert(
+                        JSON.parse(text).items[0].new_active_users
+                    )
+                },
+                "GET"
+            )
+
+            scheduler.add(
+                "https://api.github.com/zen",
+                function (text){
+                    console.log(text)
+                },
+                "GET"
+            )
+
+            console.log(scheduler.status())
+            window.setTimeout(
+                function(){
+                    console.log(scheduler.status())
+                }, 500
+            )
+        </script>
+    </head>
+    <body></body>
+</html>
