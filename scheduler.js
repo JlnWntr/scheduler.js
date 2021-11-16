@@ -27,12 +27,14 @@ const DEFAULT_CACHE                 = "no-cache" // *default, no-cache, reload, 
 const SCHEDULER_JOB_STATUS_PENDING  = "pending"
 const SCHEDULER_JOB_STATUS_RUNNING  = "running"
 const SCHEDULER_JOB_STATUS_DONE     = "done"
+SCHEDULER_AUTORUN                   = true
 
 
 /* Constructor
  * @param timeout (optional)*/
 function Scheduler(timeout) {
   this.running = false
+  this.autorun = SCHEDULER_AUTORUN
   this.queue = []
 
   this.timeout = timeout
@@ -66,7 +68,7 @@ Scheduler.prototype.add = function(request, callback, method, header, body) {
         "callback" : callback,
         "status" : SCHEDULER_JOB_STATUS_RUNNING
     });
-    if(this.running==false)
+    if((this.running==false) && (this.autorun == true))
         this.work()
 }
 
