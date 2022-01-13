@@ -38,7 +38,7 @@ function Scheduler(timeout) {
   this.queue = []
 
   this.timeout = timeout
-  if(this.timeout == undefined){     
+  if(this.timeout == undefined){
      this.timeout = DEFAULT_SCHEDULER_TIMEOUT
   }
 }
@@ -90,11 +90,13 @@ Scheduler.prototype.work = function() {
     fetch(new_job.request)
     .then(response => response.text())
     .then( function(job, that, json){
-        that.running = false
-        job.status = SCHEDULER_JOB_STATUS_DONE
-        that.work() // continue working
         if (job.callback !== undefined)
             job.callback((json))
+
+        that.running = false
+        job.status = SCHEDULER_JOB_STATUS_DONE
+
+        that.work() // continue working
       }.bind(null, new_job, this)
     )
     .catch(error => console.error(error))
