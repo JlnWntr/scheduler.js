@@ -19,50 +19,44 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 */
+
+
+/***
+ * This will start a node.js server, which provides a simple message-queue.
+ * See messagequeue_test.html
+ */
+
 const hostname      = "127.0.0.1"
 const port          = 3000
-
-const DEFAULT_SCHEDULER_TIMEOUT = 60000
-const DEFAULT_CORS_MODE = "cors" // no-cors, cors, *same-origin
-const DEFAULT_CACHE = "no-cache" // *default, no-cache, reload, force-cache, only-if-cached
-
-const SCHEDULER_JOB_STATUS_RUNNING = "running"
-const SCHEDULER_JOB_STATUS_DONE = "done"
+const request =  {
+    method: "GET",
+    mode: "cors", // no-cors, cors, *same-origin
+    cache: "no-cache", // *default, no-cache, reload, force-cache,
+    timeout: 10000,        
+    hostname: "api.github.com",
+    port: 443,
+    path: "/zen",        
+    headers: {"user-agent": "Mozilla"}
+}
+const max_buffer_size = 100
 
 const http          = require("http")
 const https         = require("https")
-const url           = require('url')
+const url           = require("url")
 
 var sch               = new Scheduler()
-var data              = {}
+var data              = []
 
 function Scheduler(timeout) {
     this.running = false    
     this.queue = []
-    this.timeout = timeout
-    if (this.timeout == undefined) this.timeout = DEFAULT_SCHEDULER_TIMEOUT
 }
 
-Scheduler.prototype.add = function (destination, path, callback, request) {  
-    //const headers =  JSON.stringify(request.headers)   
-    var r =  {
-        method: request.method,
-        mode: DEFAULT_CORS_MODE,
-        cache: DEFAULT_CACHE,
-        timeout: this.timeout,        
-        hostname: destination,
-        port: 443,
-        path: path,        
-        headers: {"user-agent": "Mozilla"}//headers["user-agent"]}
-        //JSON.stringify(request.headers)
-    }
-    //if (body != undefined) r.body = body
-    
+Scheduler.prototype.add = function (callback) {     
     this.queue.push({
-        "request": r,
-        "callback": callback,
-        "status": SCHEDULER_JOB_STATUS_RUNNING
-    });
+        "request": request,
+        "callback": callback
+    })
     if (this.running == false) this.work()
 }
 
@@ -75,63 +69,60 @@ Scheduler.prototype.work = function () {
         this.running = false
         return false
     }
-    new_job.status = SCHEDULER_JOB_STATUS_RUNNING
     
     const req = https.request(new_job.request, function (job, that, res){            
         res.on("data", function(callback, json){
-          if (callback !== undefined) 
-            callback(json.toString())//JSON.stringify(json))
-        }.bind(null, job.callback))
-        
-        that.running = false
-        job.status = SCHEDULER_JOB_STATUS_DONE
+          if (callback !== undefined) callback(json.toString())
+        }.bind(null, job.callback))        
+        that.running = false       
         that.work()
       }.bind(null, new_job, this)
     )  
-    req.on("error", error => {
-        console.error(error)
-    })      
-    //req.write(data)
+    req.on("error", error => {console.error(error)})          
     req.end()
     return true
 }
 
-function write(key, data){
-    if (data[key] === undefined)
-        data[key] = new Array()
-    console.log(data[key])
-    data[key].push(data)    
+function write(key, d){
+    for (var i=0; i<data.length; i++){
+        if (data[i].key.localeCompare(key) == 0){                       
+            if (data[i].data.length >= max_buffer_size)
+                data[i].data.shift()
+            data[i].data.push(d) //;console.log(data)     
+            return
+        }
+    }    
+    if (data.length >= max_buffer_size)
+        data.shift()
+    data.push({key:key, data:[d]})//; console.log(data)       
 }
 
 function read(key){
-    if (data[key] == undefined)
-        return
-    return data[key].pop()    
+    for (var i=0; i<data.length; i++)
+        if (data[i].key.localeCompare(key) == 0)
+            return data[i].data.shift()  
 }
 
-const server = http.createServer((request, response) => {
+const server = http.createServer((request, response) => {   
+    response.setHeader("Access-Control-Allow-Origin", "*")   
+    response.setHeader("Access-Control-Allow-Methods", "GET, POST")   
+    //response.setHeader("Access-Control-Allow-Credentials", true)
     response.statusCode = 200       
     
-    const url_parts   = url.parse(request.url, true)
+    const url_parts = url.parse(request.url, true)
     if (url_parts.query.channel == undefined) {
         response.end()
         return    
-    }    
-    const channel     = url_parts.query.channel.toString()
-    
-    if (url_parts.query.destination != undefined){
-        response.end()
-        sch.add( 
-            url_parts.query.destination.toString(),
-            "/zen",
-            write.bind(null, channel),       
-            request
-        )
     } 
-    else
+    const channel = url_parts.query.channel.toString() 
+    
+    if (request.method == "POST") {
+        response.end()
+        sch.add(write.bind(null, channel))        
+    } 
+    else{    
         response.end(read(channel))
+    }
 })
 
-server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`)
-});
+server.listen(port, hostname, () => {console.log(`Server running at http://${hostname}:${port}/`)})

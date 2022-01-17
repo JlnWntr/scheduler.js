@@ -1,18 +1,16 @@
 # scheduler.js
-Chain your AJAX requests for slow and sluggish servers!
+Chain your AJAX requests!
 
 Example:
 ```JavaScript
  var scheduler = new Scheduler()
  
- scheduler.add(   // first request 
-  "https://api.stackexchange.com/2.2/info?site=stackoverflow", // URL
-  function (text){ // callback 
-    alert(
-      JSON.parse(text).items[0].new_active_users
-    )
-  }, "GET" // method
+scheduler.add(                 // 1. request 
+  "https://api.github.com/zen", // URL
+  alert(text),                  // callback 
+  "GET"                         // method
 )
 
-scheduler.add(…)  // second request
-scheduler.add(…)  // third request and so on
+scheduler.add(…)                // 2. request
+scheduler.add(…)                // 3. request and so on
+```
