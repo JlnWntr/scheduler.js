@@ -35,7 +35,7 @@ if (process.argv[3] != undefined) host_port = process.argv[3]
 if (process.argv[4] != undefined) dest_addr = process.argv[4] 
 if (process.argv[5] != undefined) dest_port = process.argv[5] 
 //console.log(process.argv)
-console.log(`Server will send to ${dest_addr}:${dest_port}/`)
+console.log(`Server will send to ${dest_addr}:${dest_port}`)
 
 const Request =  {
     method: "GET",
@@ -48,13 +48,6 @@ const Request =  {
     headers: {"user-agent": "Mozilla"}
 }
 const max_buffer_size = 100
-
-const http          = require("http")
-const https         = http//require("https")
-const url           = require("url")
-
-var sch               = new Scheduler()
-var data              = []
 
 function Scheduler() {
     this.running = false    
@@ -116,11 +109,19 @@ function read(key){
             return data[i].data.shift()  
 }
 
+const http          = require("http")
+const https         = http//require("https")
+const url           = require("url")
+
+var sch               = new Scheduler()
+var data              = []
+
 const server = http.createServer((request, response) => {   
     response.setHeader("Access-Control-Allow-Origin", "*")   
     response.setHeader("Access-Control-Allow-Methods", "GET, POST")   
     //response.setHeader("Access-Control-Allow-Credentials", true)
-    response.statusCode = 200       
+    response.statusCode = 200   
+    //console.log(request);    response.end();    return
     
     const url_parts = url.parse(request.url, true)
     if (url_parts.query.channel == undefined) {
@@ -142,5 +143,4 @@ const server = http.createServer((request, response) => {
     })
     
 })
-
-server.listen(host_port, host_addr, () => {console.log(`Server running on ${host_addr}:${host_port}/`)})
+server.listen(host_port, host_addr, () => {console.log(`Server running on ${host_addr}:${host_port}`)})
