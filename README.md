@@ -7,7 +7,7 @@ Example:
  
 scheduler.add(                 // 1. request 
   "https://api.github.com/zen", // URL
-  alert(text),                  // callback 
+  function(text){alert(text)},                  // callback 
   "GET"                         // method
 )
 
